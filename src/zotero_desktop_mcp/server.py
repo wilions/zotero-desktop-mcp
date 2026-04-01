@@ -1,26 +1,25 @@
 from __future__ import annotations
 
-import json
 import re
+import uuid
 from html import unescape
 
 import httpx
 from fastmcp import FastMCP
 
 ZOTERO_BASE = "http://localhost:23119"
-ZOTERO_API = f"{ZOTERO_BASE}/api/users/0"
 
 mcp = FastMCP("zotero-desktop")
 
+_client = httpx.AsyncClient(base_url=ZOTERO_BASE, timeout=30)
+
 
 async def _get(path: str, params: dict | None = None) -> httpx.Response:
-    async with httpx.AsyncClient() as client:
-        return await client.get(f"{ZOTERO_BASE}{path}", params=params, timeout=30)
+    return await _client.get(path, params=params)
 
 
 async def _post(path: str, **kwargs) -> httpx.Response:
-    async with httpx.AsyncClient() as client:
-        return await client.post(f"{ZOTERO_BASE}{path}", timeout=30, **kwargs)
+    return await _client.post(path, **kwargs)
 
 
 def _strip_html(html: str) -> str:
@@ -303,8 +302,6 @@ async def create_note(note_text: str, tags: list[str] | None = None) -> str:
             "note": html_note,
             "tags": [{"tag": t} for t in (tags or [])],
         }
-        import uuid
-
         payload = {
             "items": [item],
             "uri": "http://localhost",
